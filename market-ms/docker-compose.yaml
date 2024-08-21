@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    command: python main.py
+    restart: unless-stopped
+    env_file: .env
+    network_mode: "host"
+
+  db:
+    image: mysql:8.0.39-debian
+    restart: unless-stopped
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=market
+      - MYSQL_USER=market
+      - MYSQL_PASSWORD=market
+      - MYSQL_DATABASE=market
+      - MYSQL_INITDB_SKIP_TZINFO=1

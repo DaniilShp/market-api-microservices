@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+
+  market-app:
+    container_name: market-app
+    extends:
+      file: ./market-ms/docker-compose.yaml
+      service: app
+    depends_on:
+      - market-db
+  market-db:
+    container_name: market-db
+    extends:
+      file: ./market-ms/docker-compose.yaml
+      service: db
+
+  auth-app:
+    container_name: auth-app
+    extends:
+      file: ./auth-ms/docker-compose.yaml
+      service: app
+    depends_on:
+      - auth-db
+  auth-db:
+    container_name: auth-db
+    extends:
+      file: ./auth-ms/docker-compose.yaml
+      service: db
+
+  adminpanel-app:
+    container_name: adminpanel-app
+    extends:
+      file: ./adminpanel-ms/docker-compose.yaml
+      service: app
+
+  proxy:
+    image: nginx:stable-alpine
+    container_name: nginx-ms
+    ports:
+      - 80:80
+    network_mode: "host"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    command: [ "nginx", "-g", "daemon off;" ]
