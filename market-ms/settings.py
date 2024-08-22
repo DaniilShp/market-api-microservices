@@ -5,6 +5,7 @@ import dotenv
 dotenv.load_dotenv(dotenv_path=".env")
 
 listen = os.environ.get('LISTEN')
+redis_url = os.environ.get('REDIS_URL')
 
 
 def get_db_config():

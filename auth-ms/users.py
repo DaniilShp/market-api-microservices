@@ -1,3 +1,4 @@
+import uuid
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy import MetaData, Table, Column, Integer, String, select
@@ -7,7 +8,8 @@ User = Table(
     'users', metadata,
     Column('login', String(30), primary_key=True, index=True),
     Column('password', String(100)),
-    Column('privileges', Integer)
+    Column('privileges', Integer),
+    Column('user_uid', String(36))
 )
 
 
@@ -32,19 +34,18 @@ async def mysql_context(app):
 async def register_user(engine: AsyncEngine, new_user_data: dict):
     async with engine.begin() as conn:
         new_user_data['password'] = bcrypt.hashpw(new_user_data['password'].encode('utf-8'), bcrypt.gensalt())
+        new_user_data['user_uid'] = uuid.uuid4()
         await conn.execute(User.insert().values(**new_user_data))
 
 
 async def check_password(engine, login, password):
     async with engine.begin() as conn:
         result = await conn.execute(
-            select(User.c.login, User.c.password, User.c.privileges).where(
+            select(User.c.login, User.c.password, User.c.privileges, User.c.user_uid).where(
                 User.c.login == str(login)
             )
         )
         row = result.fetchone()
         if row:
             if bcrypt.checkpw(password.encode('utf-8'), row[1].encode('utf-8')):
-                return int(row[2])
-
-
+                return int(row[2]), row[3]

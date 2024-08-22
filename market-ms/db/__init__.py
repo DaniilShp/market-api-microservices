@@ -23,4 +23,22 @@ async def init_db(engine):
     async with engine.begin() as conn:
         await conn.run_sync(metadata.create_all)
 
+        """product_data = {
+                'product_id': 1,
+                'name': 'Laptop',
+                'type': 'Electronics',
+                'price': 999,
+                'amount_in_stock': 8,
+                'image_url': 'http://example.com/laptop.jpg'
+        }
+        await conn.execute(products.insert().values(**product_data))
+        product_data = {
+                'product_id': 2,
+                'name': 'Laptop2',
+                'type': 'Electronics',
+                'price': 888,
+                'amount_in_stock': 6,
+                'image_url': 'http://example.com/laptop2.jpg'
+        }
+        await conn.execute(products.insert().values(**product_data))"""
     return products, product_info

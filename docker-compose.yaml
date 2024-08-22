@@ -9,11 +9,17 @@ services:
       service: app
     depends_on:
       - market-db
+      - market-cash
   market-db:
     container_name: market-db
     extends:
       file: ./market-ms/docker-compose.yaml
       service: db
+  market-cash:
+    container_name: market-cash
+    extends:
+      file: ./market-ms/docker-compose.yaml
+      service: cash
 
   auth-app:
     container_name: auth-app

@@ -3,6 +3,7 @@ from aiohttp_session import get_session
 
 import settings
 from users import register_user, check_password
+from utils import login_required
 
 auth_routes = web.RouteTableDef()
 
@@ -26,10 +27,10 @@ async def login(request: web.Request):
     session = await get_session(request)
     user_data = await request.json()
     l, p = user_data['login'], user_data['password']
-    privileges = await check_password(engine, l, p)
+    privileges, user_uid = await check_password(engine, l, p)
     if privileges is None:
         return web.json_response({"message": "incorrect login or password"})
-    payload = {'login': l, 'password': p, 'privileges': privileges}
+    payload = {'login': l, 'password': p, 'privileges': privileges, 'user_uid': user_uid}
     session['user_data'] = payload
     return web.json_response({'message': 'success'})
 
@@ -40,7 +41,11 @@ async def check_user(request: web.Request):
     if session.empty:
         return web.json_response({'msg': 'not authorized'})
     engine = request.config_dict['alchemy_engine']
-    ok = await check_password(engine, session['user_data']['login'], session['user_data']['password'])
+    ok = await check_password(
+        engine,
+        session['user_data']['login'],
+        session['user_data']['password']
+    )
     if ok is None:
         session.clear()
         return web.json_response({'msq': 'bad cookie_session'})
@@ -57,10 +62,14 @@ async def logout(request: web.Request):
 redirect_routes = web.RouteTableDef()
 
 
-async def redirect_request(method, url):
-    print(method, url)
-    async with ClientSession() as session:
-        async with session.request(method, url) as response:
+async def redirect_request(request, base_url):
+    method = request.method
+    rel_path = request.match_info.get('tail', '')
+    payload = await request.json() if method in ("PUT", "POST", "PATCH") else {"": ""}
+    session = await get_session(request)
+    headers = {'user_uid': session['user_data']['user_uid']} if 'user_data' in session else None
+    async with ClientSession(headers=headers) as session:
+        async with session.request(method, base_url + rel_path, json=payload) as response:
             data = await response.text()
             status = response.status
             headers = response.headers
@@ -68,18 +77,15 @@ async def redirect_request(method, url):
 
 
 @redirect_routes.route('*', '/market/{tail:.*}')
+@login_required
 async def market_routes(request: web.Request):
-    method = request.method
     ms_base_path = settings.market_url
-    rel_path = request.match_info.get('tail', '')
-    data, status, headers = await redirect_request(method, ms_base_path+rel_path)
+    data, status, headers = await redirect_request(request, ms_base_path)
     return web.Response(text=data, status=status, headers=headers)
 
 
 @redirect_routes.route('*', '/adminpanel/{tail:.*}')
 async def adminpanel_routes(request: web.Request):
-    method = request.method
     ms_base_path = settings.adminpanel_url
-    rel_path = request.match_info.get('tail', '')
-    return web.json_response({'method': method, 'url': ms_base_path+rel_path})
-    return await redirect_request(method, ms_base_path+rel_path)
+    data, status, headers = await redirect_request(request, ms_base_path)
+    return web.Response(text=data, status=status, headers=headers)
