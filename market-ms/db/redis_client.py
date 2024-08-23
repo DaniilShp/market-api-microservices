@@ -8,7 +8,7 @@ class RedisClient:
 
     async def get_user_session(self, key: str):
         session = await self.session_client.json().get(key, "$")
-        if session[0] is None or session == []:
+        if session is None or session[0] is None or session == []:
             session = [dict()]
         await self.session_client.expire(key, 60*60*24)
         return session[0]

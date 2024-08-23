@@ -1,7 +1,5 @@
-import uuid
-
+import json
 from aiohttp import web
-from aiohttp_session import get_session
 
 routes = web.RouteTableDef()
 
@@ -27,7 +25,6 @@ async def get_all_products(request):
 @routes.post('/add_to_cart')
 async def add_to_cart(request: web.Request):
     user_uid = request.headers.get('user_uid', None)
-    user_uid = uuid.uuid4() if user_uid is None else user_uid
     purchase = await request.json()  # {'product_id': int, 'amount': int}
     product_id = purchase['product_id']
     amount = purchase['amount']
@@ -41,12 +38,19 @@ async def add_to_cart(request: web.Request):
 async def clear_cart(request: web.Request):
     redis_client = request.app['redis_client']
     user_uid = request.headers.get('user_uid', None)
-    if user_uid is not None:
-        await redis_client.clear_session(key=user_uid)
+    await redis_client.clear_session(key=user_uid)
     return web.Response(status=204)
 
 
-@routes.post('/confirm_purchase')
+@routes.post('/confirm_purchases')
 async def confirm_purchase(request: web.Request):
-    session = await get_session(request)
-
+    import nats
+    redis_client = request.app['redis_client']
+    nats_client: nats.NATS = request.app['nats']
+    user_uid = request.headers.get('user_uid', None)
+    session = await request.app['redis_client'].get_user_session(key=user_uid)
+    payload = json.dumps(session).encode()
+    await redis_client.clear_session(key=user_uid)
+    await nats_client.publish('confirmed_purchases', payload)
+    await nats_client.flush()
+    return web.json_response(session)

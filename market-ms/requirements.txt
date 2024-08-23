@@ -13,6 +13,7 @@ frozenlist==1.4.1
 greenlet==3.0.3
 idna==3.7
 multidict==6.0.5
+nats-py==2.8.0
 pyaes==1.6.1
 pycparser==2.22
 PyMySQL==1.1.1

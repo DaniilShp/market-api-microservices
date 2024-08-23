@@ -20,7 +20,7 @@ services:
       - MYSQL_DATABASE=market
       - MYSQL_INITDB_SKIP_TZINFO=1
 
-  cash:
+  cache:
     image: redis/redis-stack:6.2.6-v15-x86_64
     restart: unless-stopped
     ports:
