@@ -13,7 +13,8 @@ adminpanel_url = os.environ.get('ADMINPANEL_URL')
 """Proxy server config"""
 not_protected_routes = [  # no need authorization
     re.compile('/market/get_name'),
-    re.compile('/market/get_all_products')
+    re.compile('/market/get_all_products'),
+    re.compile('/adminpanel/get_name')
 ]
 
 print(bool(re.fullmatch(not_protected_routes[0], '/market/get_name')))

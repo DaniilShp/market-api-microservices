@@ -1,29 +1,21 @@
 from aiohttp import web
-import nats
+
+import routes
 import settings
-from nats.aio.msg import Msg
+from nats_utils import nats_context
+from db_engine import mongo_context
 
 
-async def nats_context(app):
-    app['nats'] = await nats.connect(settings.nats_url)
-    await app['nats'].subscribe('confirmed_purchases', cb=on_message)
-    yield
-    await app['nats'].flush()
-    await app['nats'].close()
-
-
-async def on_message(data: dict):
-    print(data)
-
-
-async def handler(request):
-    return web.Response(text="admin panel")
-
-
-app = web.Application()
-app.router.add_get('/get_name', handler)
-app.cleanup_ctx.append(nats_context)
+def init_app():
+    app = web.Application()
+    app.cleanup_ctx.append(mongo_context)
+    app.cleanup_ctx.append(nats_context)
+    app.add_routes(routes.routes)
+    host, port = settings.listen.split(':')
+    port = int(port)
+    web.run_app(app, host=host, port=port, access_log_format='%a %t "%r" %s %Tfs.')
 
 
 if __name__ == '__main__':
-    web.run_app(app, host='0.0.0.0', port=8083)
+    init_app()
+

@@ -39,6 +39,21 @@ services:
     extends:
       file: ./adminpanel-ms/docker-compose.yaml
       service: app
+    depends_on:
+      - adminpanel-db
+  adminpanel-db:
+    container_name: adminpanel-db
+    extends:
+      file: ./adminpanel-ms/docker-compose.yaml
+      service: mongodb
+  adminpanel-db-client:
+    container_name: adminpanel-db-client
+    extends:
+      file: ./adminpanel-ms/docker-compose.yaml
+      service: mongo-express
+    depends_on:
+      - adminpanel-db
+
 
   message-broker:
     image: nats:alpine3.20

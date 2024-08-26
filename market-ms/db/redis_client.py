@@ -17,6 +17,6 @@ class RedisClient:
         await self.session_client.json().set(key, "$", session)
 
     async def clear_session(self, key):
-        await self.session_client.json().clear(key)
+        await self.session_client.json().delete(key)
 
 

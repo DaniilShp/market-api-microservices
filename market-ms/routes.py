@@ -48,7 +48,7 @@ async def confirm_purchase(request: web.Request):
     redis_client = request.app['redis_client']
     nats_client: nats.NATS = request.app['nats']
     user_uid = request.headers.get('user_uid', None)
-    session = await request.app['redis_client'].get_user_session(key=user_uid)
+    session = await redis_client.get_user_session(key=user_uid)
     payload = json.dumps(session).encode()
     await redis_client.clear_session(key=user_uid)
     await nats_client.publish('confirmed_purchases', payload)
